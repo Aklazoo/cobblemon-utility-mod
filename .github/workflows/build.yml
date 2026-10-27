@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: unzip -o cobblemon_utility_mod_source.zip
+      - run: unzip -o cobblemon_utility_mod_150.zip
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
