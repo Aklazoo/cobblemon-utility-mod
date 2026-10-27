@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           rm -rf cobblemon_utility_mod
-          unzip -o cobblemon_utility_mod_150.zip
+          for z in $(ls cobblemon_utility_mod_*.zip | sort -V); do unzip -o "$z"; done
           grep mod_version cobblemon_utility_mod/gradle.properties
       - uses: actions/setup-java@v4
         with:
@@ -20,5 +20,5 @@ jobs:
       - run: ls cobblemon_utility_mod/build/libs
       - uses: actions/upload-artifact@v4
         with:
-          name: mod-jar-v150
+          name: mod-jar-latest
           path: cobblemon_utility_mod/build/libs/*.jar
