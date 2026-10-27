@@ -5,9 +5,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
+      - name: Unzip latest source
+        run: |
+          ls -la
+          Z=$(ls -1 cobblemon_utility_mod_[0-9]*.zip 2>/dev/null | sort -V | tail -n 1)
+          echo "Using zip: $Z"
+          if [ -z "$Z" ]; then echo "ERREUR: aucun fichier cobblemon_utility_mod_<numero>.zip dans le depot"; exit 1; fi
           rm -rf cobblemon_utility_mod
-          for z in $(ls cobblemon_utility_mod_*.zip | sort -V); do unzip -o "$z"; done
+          unzip -o "$Z"
           grep mod_version cobblemon_utility_mod/gradle.properties
       - uses: actions/setup-java@v4
         with:
