@@ -5,7 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: unzip -o cobblemon_utility_mod_150.zip
+      - run: |
+          rm -rf cobblemon_utility_mod
+          unzip -o cobblemon_utility_mod_150.zip
+          grep mod_version cobblemon_utility_mod/gradle.properties
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -14,7 +17,8 @@ jobs:
         with:
           gradle-version: 8.10.2
       - run: gradle build -p cobblemon_utility_mod
+      - run: ls cobblemon_utility_mod/build/libs
       - uses: actions/upload-artifact@v4
         with:
-          name: cobblemon_utility_mod-jar
+          name: mod-jar-v150
           path: cobblemon_utility_mod/build/libs/*.jar
