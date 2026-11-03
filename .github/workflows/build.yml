@@ -1,19 +1,11 @@
 name: build
 on: [push, workflow_dispatch]
+
 jobs:
-  build:
+  client:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unzip latest source
-        run: |
-          ls -la
-          Z=$(ls -1 cobblemon_utility_mod_[0-9]*.zip 2>/dev/null | sort -V | tail -n 1)
-          echo "Using zip: $Z"
-          if [ -z "$Z" ]; then echo "ERREUR: aucun fichier cobblemon_utility_mod_<numero>.zip dans le depot"; exit 1; fi
-          rm -rf cobblemon_utility_mod
-          unzip -o "$Z"
-          grep mod_version cobblemon_utility_mod/gradle.properties
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -21,9 +13,59 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.10.2
-      - run: gradle build -p cobblemon_utility_mod
-      - run: ls cobblemon_utility_mod/build/libs
+      - name: Unzip the latest client source
+        run: |
+          ZIP=$(ls cobblemon_utility_mod_[0-9]*.zip 2>/dev/null | sort -V | tail -n 1 || true)
+          if [ -z "$ZIP" ]; then echo "No cobblemon_utility_mod_<number>.zip found"; ls -la; exit 1; fi
+          echo "Using zip: $ZIP"
+          rm -rf proj_client
+          mkdir proj_client
+          unzip -oq "$ZIP" -d proj_client || [ $? -eq 1 ]
+          GRADLE_FILE=$(find proj_client -name build.gradle | head -n 1)
+          if [ -z "$GRADLE_FILE" ]; then echo "build.gradle not found in the zip"; find proj_client | head -50; exit 1; fi
+          echo "PROJ=$(dirname "$GRADLE_FILE")" >> "$GITHUB_ENV"
+      - name: Build
+        run: |
+          cd "$PROJ"
+          gradle build --no-daemon --stacktrace
+          ls -la build/libs
       - uses: actions/upload-artifact@v4
         with:
           name: mod-jar-latest
-          path: cobblemon_utility_mod/build/libs/*.jar
+          path: |
+            ${{ env.PROJ }}/build/libs/*.jar
+            !${{ env.PROJ }}/build/libs/*-sources.jar
+
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.10.2
+      - name: Unzip the latest server source
+        run: |
+          ZIP=$(ls cobblemon_shiny_control_[0-9]*.zip 2>/dev/null | sort -V | tail -n 1 || true)
+          if [ -z "$ZIP" ]; then echo "No cobblemon_shiny_control_<number>.zip found"; ls -la; exit 1; fi
+          echo "Using zip: $ZIP"
+          rm -rf proj_server
+          mkdir proj_server
+          unzip -oq "$ZIP" -d proj_server || [ $? -eq 1 ]
+          GRADLE_FILE=$(find proj_server -name build.gradle | head -n 1)
+          if [ -z "$GRADLE_FILE" ]; then echo "build.gradle not found in the zip"; find proj_server | head -50; exit 1; fi
+          echo "PROJ=$(dirname "$GRADLE_FILE")" >> "$GITHUB_ENV"
+      - name: Build
+        run: |
+          cd "$PROJ"
+          gradle build --no-daemon --stacktrace
+          ls -la build/libs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shiny-control-jar
+          path: |
+            ${{ env.PROJ }}/build/libs/*.jar
+            !${{ env.PROJ }}/build/libs/*-sources.jar
